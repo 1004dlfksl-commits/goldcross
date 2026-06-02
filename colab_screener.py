@@ -171,6 +171,117 @@ else:
 # 5. 본문 실행 영역
 # ==========================================
 def main():
+    # 📱 모바일 가독성 및 재생 버튼 시각화 안내 CSS 주입
+    display(HTML("""
+    <style>
+        .colab-output-container {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            font-size: 8px !important;
+            color: #e2e8f0;
+            line-height: 1.4;
+        }
+        .colab-output-container h3 {
+            font-size: 9.5px !important;
+            font-weight: 700;
+            color: #ffffff;
+            margin-top: 10px;
+            margin-bottom: 4px;
+        }
+        .colab-output-container p {
+            font-size: 8px !important;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+        .notice-card {
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            border-left: 4px solid #3b82f6;
+            padding: 6px 8px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+        .notice-card-text {
+            font-size: 8px !important;
+            color: #cbd5e1;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        /* 프리미엄 금융 다크테마 테이블 */
+        .goldcross-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 7.5px !important;
+            margin-top: 4px;
+            margin-bottom: 16px;
+            background-color: #0f172a;
+            color: #f8fafc;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+        .goldcross-table th {
+            background-color: #1e293b;
+            color: #cbd5e1;
+            font-weight: 600;
+            text-align: left;
+            padding: 4px 6px;
+            border-bottom: 1.5px solid #334155;
+            white-space: nowrap;
+        }
+        .goldcross-table td {
+            padding: 4px 6px;
+            border-bottom: 1px solid #1e293b;
+            color: #e2e8f0;
+            white-space: nowrap;
+        }
+        .goldcross-table tr:nth-child(even) {
+            background-color: #131c2e;
+        }
+        .goldcross-table tr:hover {
+            background-color: #1e293b;
+        }
+        /* 종목명 링크 */
+        .stock-link {
+            color: #60a5fa !important;
+            text-decoration: none !important;
+            font-weight: 700;
+        }
+        .stock-link:active {
+            color: #93c5fd !important;
+            text-decoration: underline !important;
+        }
+        /* 바로가기 버튼 */
+        .btn-naver-link {
+            display: inline-block;
+            background-color: #1e40af;
+            color: #ffffff !important;
+            text-decoration: none !important;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px !important;
+            font-weight: 600;
+            text-align: center;
+        }
+        .btn-naver-link:hover {
+            background-color: #1d4ed8;
+        }
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+    
+    <div class='notice-card'>
+        <span style='font-size: 16px; margin-right: 8px;'>💡</span>
+        <div class='notice-card-text'>
+            <b>[ 실행 방법 ]</b> 설정을 변경한 뒤, 코드 셀 바로 왼쪽 끝에 있는 <b>동그란 재생(▶) 아이콘</b>을 누르면 분석이 원터치로 다시 수행됩니다!
+        </div>
+    </div>
+    """))
+
     # 분석 일자 정의
     today_dt = datetime.today()
     start_dt = today_dt - timedelta(days=250)
@@ -359,37 +470,63 @@ def main():
     # 6. 테이블 결과물 출력 영역 (Google Colab 최적화)
     # ==========================================
     def show_table(title, desc, data_list, is_sniper_tbl=False):
-        display(HTML(f"<div style='border-left: 4px solid #3b82f6; padding-left: 10px; margin-top: 25px;'><h3>{title}</h3></div>"))
-        display(HTML(f"<p style='color: #64748b; font-size: 14px;'>{desc}</p>"))
+        # 30% 축소된 글씨가 들어가는 최적화 컨테이너
+        display(HTML(f"<div class='colab-output-container'><div style='border-left: 4px solid #3b82f6; padding-left: 8px; margin-top: 20px;'><h3>{title}</h3></div><p>{desc}</p></div>"))
         if not data_list:
-            display(HTML("<p style='color: #ef4444;'>조건을 만족하는 종목이 존재하지 않습니다.</p>"))
+            display(HTML("<div class='colab-output-container'><p style='color: #ef4444;'>조건을 만족하는 종목이 존재하지 않습니다.</p></div>"))
             return
+        
         df = pd.DataFrame(data_list)
-        if is_sniper_tbl:
-            df = df.sort_values(by='Max_Amount_3D', ascending=False)
-            df_show = df[['Code', 'Name', 'Market', 'Close', 'Max_Amount_3D', 'Volume_Today', 'Volume_3D_Ago', 'RSI', 'Disparity', 'Gap_Pct', 'PER', '네이버증권']].copy()
-            df_show.columns = ['종목코드', '종목명', '소속시장', '현재가(원)', '3일간최대거래대금', '오늘거래량', '3일전거래량', 'RSI', '이격도(%)', '20일선이격도', 'PER', '네이버증권']
-            df_show['3일간최대거래대금'] = df_show['3일간최대거래대금'].map(lambda x: f"{x:,.1f}억")
-            df_show['오늘거래량'] = df_show['오늘거래량'].map(lambda x: f"{x:,}")
-            df_show['3일전거래량'] = df_show['3일전거래량'].map(lambda x: f"{x:,}")
-        else:
-            df = df.sort_values(by='Amount', ascending=False)
-            df_show = df[['Code', 'Name', 'Market', 'Close', 'Amount', 'Marcap', 'Stock_Return_5D', 'Index_Return_5D', 'Disparity', 'RSI', 'Gap_Pct', 'Cross_Days_Ago', 'PER', '네이버증권']].copy()
-            df_show.columns = ['종목코드', '종목명', '소속시장', '현재가(원)', '일거래대금', '시가총액', '5일 종목수익률', '5일 지수수익률', '이격도(%)', 'RSI', '20일선이격도', '최근 크로스일', 'PER', '네이버증권']
-            df_show['일거래대금'] = df_show['일거래대금'].map(lambda x: f"{x:,}억")
-            df_show['시가총액'] = df_show['시가총액'].apply(format_marcap)
-            df_show['5일 종목수익률'] = df_show['5일 종목수익률'].map(lambda x: f"{x:+.2%}")
-            df_show['5일 지수수익률'] = df_show['5일 지수수익률'].map(lambda x: f"{x:+.2%}")
+        
+        if 모바일_화면_최적화:
+            # 모바일 최적화: 가로 스크롤 없이 가로 폭에 딱 맞춤 (5개 핵심 컬럼만)
+            # 종목명 자체를 링크로 감싸서 클릭 가능하게 함
+            df['종목명'] = df.apply(lambda r: f"<a class='stock-link' href='{r['네이버증권']}' target='_blank'>{r['Name']}</a>", axis=1)
+            df['현재가'] = df['Close'].map(lambda x: f"{x:,}")
             
-        df_show['20일선이격도'] = df_show['20일선이격도'].map(lambda x: f"{x:+.2f}%")
-        df_show['이격도(%)'] = df_show['이격도(%)'].map(lambda x: f"{x:.1f}%")
-        df_show['RSI'] = df_show['RSI'].map(lambda x: f"{x:.1f}" if not pd.isna(x) else "-")
-        df_show['현재가(원)'] = df_show['현재가(원)'].map(lambda x: f"{x:,}")
+            if is_sniper_tbl:
+                df = df.sort_values(by='Max_Amount_3D', ascending=False)
+                df['거래대금'] = df['Max_Amount_3D'].map(lambda x: f"{x:,.0f}억")
+                df['RSI'] = df['RSI'].map(lambda x: f"{x:.1f}" if not pd.isna(x) else "-")
+                # 20일선이격도 색상 입히기
+                df['20일선이격'] = df['Gap_Pct'].map(lambda x: f"<span style='color: #ef4444; font-weight:600;'>{x:+.1f}%</span>" if x > 0 else (f"<span style='color: #3b82f6; font-weight:600;'>{x:+.1f}%</span>" if x < 0 else f"{x:+.1f}%"))
+                df_show = df[['종목명', '현재가', '거래대금', 'RSI', '20일선이격']].copy()
+                df_show.columns = ['종목명', '현재가', '거래대금(최대)', 'RSI', '20일이격']
+            else:
+                df = df.sort_values(by='Amount', ascending=False)
+                df['거래대금'] = df['Amount'].map(lambda x: f"{x:,}억")
+                # 5일 수익률 색상 입히기
+                df['5일수익률'] = df['Stock_Return_5D'].map(lambda x: f"<span style='color: #ef4444; font-weight:600;'>{x:+.1%}</span>" if x > 0 else (f"<span style='color: #3b82f6; font-weight:600;'>{x:+.1%}</span>" if x < 0 else f"{x:+.1%}"))
+                df['크로스일'] = df['Cross_Days_Ago']
+                df_show = df[['종목명', '현재가', '거래대금', '5일수익률', '크로스일']].copy()
+                df_show.columns = ['종목명', '현재가', '거래대금', '5일수익률', '크로스일']
+        else:
+            # 전체 화면 모드 (기존 14개 컬럼 전체 출력 + 가로 스크롤 허용)
+            if is_sniper_tbl:
+                df = df.sort_values(by='Max_Amount_3D', ascending=False)
+                df_show = df[['Code', 'Name', 'Market', 'Close', 'Max_Amount_3D', 'Volume_Today', 'Volume_3D_Ago', 'RSI', 'Disparity', 'Gap_Pct', 'PER', '네이버증권']].copy()
+                df_show.columns = ['종목코드', '종목명', '소속시장', '현재가(원)', '3일간최대거래대금', '오늘거래량', '3일전거래량', 'RSI', '이격도(%)', '20일선이격도', 'PER', '네이버증권']
+                df_show['3일간최대거래대금'] = df_show['3일간최대거래대금'].map(lambda x: f"{x:,.1f}억")
+                df_show['오늘거래량'] = df_show['오늘거래량'].map(lambda x: f"{x:,}")
+                df_show['3일전거래량'] = df_show['3일전거래량'].map(lambda x: f"{x:,}")
+            else:
+                df = df.sort_values(by='Amount', ascending=False)
+                df_show = df[['Code', 'Name', 'Market', 'Close', 'Amount', 'Marcap', 'Stock_Return_5D', 'Index_Return_5D', 'Disparity', 'RSI', 'Gap_Pct', 'Cross_Days_Ago', 'PER', '네이버증권']].copy()
+                df_show.columns = ['종목코드', '종목명', '소속시장', '현재가(원)', '일거래대금', '시가총액', '5일 종목수익률', '5일 지수수익률', '이격도(%)', 'RSI', '20일선이격도', '최근 크로스일', 'PER', '네이버증권']
+                df_show['일거래대금'] = df_show['일거래대금'].map(lambda x: f"{x:,}억")
+                df_show['시가총액'] = df_show['시가총액'].apply(format_marcap)
+                df_show['5일 종목수익률'] = df_show['5일 종목수익률'].map(lambda x: f"{x:+.2%}")
+                df_show['5일 지수수익률'] = df_show['5일 지수수익률'].map(lambda x: f"{x:+.2%}")
+                
+            df_show['20일선이격도'] = df_show['20일선이격도'].map(lambda x: f"{x:+.2f}%")
+            df_show['이격도(%)'] = df_show['이격도(%)'].map(lambda x: f"{x:.1f}%")
+            df_show['RSI'] = df_show['RSI'].map(lambda x: f"{x:.1f}" if not pd.isna(x) else "-")
+            df_show['현재가(원)'] = df_show['현재가(원)'].map(lambda x: f"{x:,}")
+            df_show['네이버증권'] = df_show.apply(lambda r: f"<a class='btn-naver-link' href='{r['네이버증권']}' target='_blank'>바로가기 ↗</a>", axis=1)
         
-        # 주식코드 기준 링크 서식 생성
-        df_show['네이버증권'] = df_show.apply(lambda r: f"<a href='{r['네이버증권']}' target='_blank'>이동 ↗</a>", axis=1)
-        
-        display(HTML(df_show.to_html(escape=False, index=False)))
+        # HTML 렌더링 후 화면 출력
+        html_table = df_show.to_html(escape=False, index=False, classes='goldcross-table')
+        display(HTML(f"<div class='table-responsive'>{html_table}</div>"))
 
     # 모드에 따른 분기 렌더링
     if 단기_저격_모드_스윙:
